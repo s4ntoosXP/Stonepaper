@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pedra, Papel e Tesoura - Simulação Automática</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background-image: url(imagens/background.jpg);
+      background-repeat: no-repeat;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    #stats {
+      font-size: 20px;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 800px;
+      height: 500px;
+      background: transparent;
+      border: 2px solid #444;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .object {
+      position: absolute;
+      font-size: 28px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    #resetBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #resetBtn:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Rock, Stone or Scissors</h1>
+
+  <div id="stats">
+    🪨 <span id="countRock">0</span> |
+    📄 <span id="countPaper">0</span> |
+    ✂️ <span id="countScissors">0</span>
+  </div>
+
+  <div id="gameArea"></div>
+
+  <button id="resetBtn" onclick="resetGame()">Reiniciar Jogo</button>
+
+  <script>
+  const gameArea = document.getElementById('gameArea');
+  const width = gameArea.clientWidth;
+  const height = gameArea.clientHeight;
+
+  let objects = [];
+  let counts = { rock: 0, paper: 0, scissors: 0 };
+
+  function updateStats() {
+    document.getElementById('countRock').textContent = counts.rock;
+    document.getElementById('countPaper').textContent = counts.paper;
+    document.getElementById('countScissors').textContent = counts.scissors;
+  }
+
+  function createObject(type) {
+    const emoji = type === 'rock' ? '🪨' : type === 'paper' ? '📄' : '✂️';
+    const el = document.createElement('div');
+    el.className = 'object';
+    el.textContent = emoji;
+    gameArea.appendChild(el);
+
+    const obj = {
+      element: el,
+      type: type,
+      x: Math.random() * (width - 40),
+      y: Math.random() * (height - 40),
+      dx: (Math.random() - 0.5) * 3,
+      dy: (Math.random() - 0.5) * 3
+    };
+
+    obj.element.style.left = obj.x + 'px';
+    obj.element.style.top = obj.y + 'px';
+
+    objects.push(obj);
+    counts[type]++;
+    updateStats();
+  }
+
+  function resetGame() {
+    objects.forEach(obj => obj.element.remove());
+    objects = [];
+    counts = { rock: 0, paper: 0, scissors: 0 };
+
+    for (let i = 0; i < 10; i++) createObject('rock');
+    for (let i = 0; i < 10; i++) createObject('paper');
+    for (let i = 0; i < 10; i++) createObject('scissors');
+
+    // Mostra imagem de reset por 2 segundos
+    showTempImage('imagens/reset.png', 2000);
+  }
+
+  function checkCollision(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < 40;
+  }
+
+  function resolveBattle(obj1, obj2) {
+    let winner = null;
+
+    if ((obj1.type === 'rock' && obj2.type === 'paper') ||
+        (obj1.type === 'paper' && obj2.type === 'rock')) {
+      const loser = obj1.type === 'rock' ? obj1 : obj2;
+      changeType(loser, 'paper');
+      winner = 'paper';
+    } else if ((obj1.type === 'paper' && obj2.type === 'scissors') ||
+               (obj1.type === 'scissors' && obj2.type === 'paper')) {
+      const loser = obj1.type === 'paper' ? obj1 : obj2;
+      changeType(loser, 'scissors');
+      winner = 'scissors';
+    } else if ((obj1.type === 'scissors' && obj2.type === 'rock') ||
+               (obj1.type === 'rock' && obj2.type === 'scissors')) {
+      const loser = obj1.type === 'scissors' ? obj1 : obj2;
+      changeType(loser, 'rock');
+      winner = 'rock';
+    }
+
+    if (winner) {
+      showTempImage(`imagens/felipeneto.jpg`, 2000); // mostra imagem do vencedor por 1s
+      return true;
+    }
+
+    return false;
+  }
+
+  function changeType(obj, newType) {
+    counts[obj.type]--;
+    obj.type = newType;
+    counts[obj.type]++;
+    obj.element.textContent = newType === 'rock' ? '🪨' : newType === 'paper' ? '📄' : '✂️';
+    updateStats();
+  }
+
+  // Função que mostra uma imagem temporária no centro do gameArea
+  function showTempImage(src, duration) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.position = 'absolute';
+    img.style.left = '50%';
+    img.style.top = '50%';
+    img.style.transform = 'translate(-50%, -50%)';
+    img.style.width = '150px';
+    img.style.height = '150px';
+    img.style.zIndex = 1000;
+    gameArea.appendChild(img);
+
+    setTimeout(() => {
+      img.remove();
+    }, duration);
+  }
+
+  function gameLoop() {
+    objects.forEach(obj => {
+      obj.x += obj.dx;
+      obj.y += obj.dy;
+
+      if (obj.x <= 0 || obj.x >= width - 40) obj.dx *= -1;
+      if (obj.y <= 0 || obj.y >= height - 40) obj.dy *= -1;
+
+      obj.x = Math.max(0, Math.min(width - 40, obj.x));
+      obj.y = Math.max(0, Math.min(height - 40, obj.y));
+
+      obj.element.style.left = obj.x + 'px';
+      obj.element.style.top = obj.y + 'px';
+    });
+
+    for (let i = 0; i < objects.length; i++) {
+      for (let j = i + 1; j < objects.length; j++) {
+        if (checkCollision(objects[i], objects[j])) {
+          resolveBattle(objects[i], objects[j]);
+          objects[i].dx *= -1;
+          objects[i].dy *= -1;
+          objects[j].dx *= -1;
+          objects[j].dy *= -1;
+        }
+      }
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  window.onload = () => {
+    resetGame();
+    gameLoop();
+  };
+</script>
+</body>
+</html>
